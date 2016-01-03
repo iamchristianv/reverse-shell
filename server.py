@@ -16,7 +16,7 @@ class Server(object):
         connection, address = self.sckt.accept()
         self.connections.append(connection)
         self.addresses.append(address)
-        self.accept_connection()
+        #self.accept_connection()
 
     def remove_connection(self, index):
         del self.addresses[index]
@@ -47,3 +47,13 @@ class Server(object):
         for connection in self.connections:
             connection.close()
         self.sckt.close()
+
+
+def main():
+    server = Server()
+    server.accept_connection()
+    server.send_commands(0)
+
+
+if __name__ == "__main__":
+    main()
