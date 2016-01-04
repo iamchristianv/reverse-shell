@@ -24,7 +24,8 @@ class Server(object):
             self.sckt.bind(("", 10101))
             self.sckt.listen(5)
         except socket.error:
-            print("\n - error: unable to configure socket")
+            print("- error: unable to configure socket")
+            print("- try again in 1 to 3 minutes")
             sys.exit()
 
     # creates 2 threads to simultaneously accept connections from clients and manage the prompt for the user
@@ -46,7 +47,7 @@ class Server(object):
             self.connections.append(connection)
             self.addresses.append(address)
         except socket.error:
-            print("\n - error: unable to accept connection")
+            print("- error: unable to accept connection")
 
     # manages the prompt for the user based on what he or she entered
     def show_prompt(self):
@@ -61,7 +62,7 @@ class Server(object):
                 if not self.error_check_for_send_commands(command[7:]):
                     self.send_commands(int(command[7:]))
             else:
-                print("\n- command not recognized")
+                print("- command not recognized")
 
     # shows a list of available connections to the user on the prompt
     def show_connections(self):
@@ -80,15 +81,15 @@ class Server(object):
     # checks whether the user entered the argument for the 'select' command appropriately
     def error_check_for_send_commands(self, argument):
         if not argument.isdigit():
-            print("\n- " + argument + " is not a number")
+            print("- " + argument + " is not a number")
             return True
         index = int(argument)
         if index >= len(self.connections):
-            print("\n- connection " + str(index) + " is not an available connection")
+            print("- connection " + str(index) + " is not an available connection")
             print("- use command 'list' to see all available connections")
             return True
         elif self.connections[index] is None:
-            print("\n- connection " + str(index) + " is no longer available")
+            print("- connection " + str(index) + " is no longer available")
             print("- use command 'list' to see all available connections")
             self.remove_connection(index)
             return True
@@ -107,7 +108,7 @@ class Server(object):
                     response = str(self.connections[index].recv(1024))
                     print(response)
                 except socket.error:
-                    print("\n - error: lost connection")
+                    print("- error: lost connection")
                     break
 
     # removes a connection by index from the lists of available connections and addresses
