@@ -39,7 +39,7 @@ class Client(object):
 
 
 def main():
-    client = Client("127.0.0.1")
+    client = Client()
     client.start()
 
 
