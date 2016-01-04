@@ -12,6 +12,7 @@ Written in Python 2.7 and Executable from the command line (**./server.py** or *
 Use the **list** command to see a list of all available connections from clients. 
 
 Use the **select {ID}** command to select a connection to connect with and manage its files.
+- **{ID}** corresponds to the leftmost number seen after running the **list** command.
 
 Use the **done** command to exit out of a connection with a computer.
 
