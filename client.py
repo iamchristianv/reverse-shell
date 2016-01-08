@@ -19,7 +19,7 @@ class Client(object):
 
     def receive_commands(self):
         while True:
-            data = self.sckt.recv(1024)
+            data = self.sckt.recv(2048)
             if data.decode("utf-8") == "?":
                 self.sckt.send("!")
             elif data[:2].decode("utf-8") == "cd":
