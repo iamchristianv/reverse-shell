@@ -9,6 +9,7 @@ class Server(object):
     sckt = None
     addresses = []
     connections = []
+    connected = False
 
     # creates socket, waits for connections from clients, and initiates the prompt for the user
     def start(self):
@@ -22,7 +23,7 @@ class Server(object):
             self.sckt.bind(("", 10101))
             self.sckt.listen(5)
         except socket.error:
-            print("\nUnable to configure socket.")
+            print("\nUnable to configure socket at the moment.")
             print("Please try again in a few minutes.\n")
             sys.exit()
 
@@ -33,7 +34,7 @@ class Server(object):
             if number == 0:
                 thread = threading.Thread(target=self.accept_connections)
             elif number == 1:
-                thread = threading.Thread(target=self.show_prompt())
+                thread = threading.Thread(target=self.show_main_menu())
             thread.daemon = True
             thread.start()
 
@@ -43,60 +44,78 @@ class Server(object):
             connection, address = self.sckt.accept()
             self.connections.append(connection)
             self.addresses.append(address)
-            print("                       ")
-            self.show_connections()
-            print("\nSelect a connection: ")
+            if not self.connected:
+                print("\n- connection established with IP address " + address[0])
+                print("- select 1 to see more information on all connections\n")
+                print("Select an option: ")
         except socket.error:
             print("\nUnable to accept a connection.\n")
 
     # manages the prompt for the user based on what he or she entered
-    def show_prompt(self):
+    def show_main_menu(self):
+        menu_selections = ("\n1) Show Connections", "2) Manage Connection", "3) Quit Program")
         while True:
-            self.show_connections()
-            selection = raw_input("\nSelect a connection: ")
-            if selection == "quit":
-                self.close_connections()
+            for menu_selection in menu_selections:
+                print(menu_selection)
+            selection = raw_input("\nSelect an option: ")
+            if not selection.isdigit():
+                print("- selection not a number")
+            elif int(selection) == 1:
+                self.show_connections()
+            elif int(selection) == 2:
+                self.select_connection()
+            elif int(selection) == 3:
                 break
-            if not self.error_check_for_send_commands(selection):
-                self.send_commands(int(selection))
             else:
                 print("- selection not available")
 
     # shows a list of available connections to the user on the prompt
     def show_connections(self):
-        print("\n---------- Connections ----------")
+        print("\n----------- Connections -----------")
         for index, address in enumerate(self.addresses):
             try:
                 self.connections[index].send("?")
-                self.connections[index].recv(2048)
+                self.connections[index].recv(4096)
             except socket.error:
                 self.remove_connection(index)
                 continue
-            print("\n" + str(index) + (" " * 10) + address[0] + (" " * 10) + str(address[1]))
+            print("\nID: " + str(index) + (" " * 5) + "IP: " + address[0] + (" " * 5) + "PORT: " + str(address[1]))
         if len(self.connections) == 0:
-            print("\n          No Connections")
-        print("\n---------------------------------")
-        print("\nEnter 'quit' to exit the program")
+            print("\n           No Connections")
+        print("\n-----------------------------------")
+
+    def select_connection(self):
+        if len(self.connections) == 0:
+            print("- no connections available")
+            return
+        while True:
+            self.show_connections()
+            print("\nEnter 'back' to return to main menu")
+            selection = raw_input("\nSelect a connection ID: ")
+            if selection.lower() == "back":
+                break
+            if not self.error_check_selection(selection):
+                self.establish_connection(int(selection))
+                break
 
     # checks whether the user entered the argument for the 'select' command appropriately
-    def error_check_for_send_commands(self, argument):
+    def error_check_selection(self, argument):
         if not argument.isdigit():
             print("- " + argument + " is not a number")
             return True
         index = int(argument)
         if index >= len(self.connections):
-            print("- connection " + str(index) + " is not an available connection")
-            print("- use command 'list' to see all available connections")
+            print("- connection " + str(index) + " is not available")
             return True
         elif self.connections[index] is None:
-            print("- connection " + str(index) + " is no longer available")
-            print("- use command 'list' to see all available connections")
+            print("- connection " + str(index) + " is not available")
             self.remove_connection(index)
             return True
         return False
 
     # sends the commands the user entered for the selected client
-    def send_commands(self, index):
+    def establish_connection(self, index):
+        self.connected = True
         print("\nEnter 'done' to exit the connection\n")
         while True:
             command = raw_input(self.addresses[index][0] + "> ")
@@ -105,11 +124,12 @@ class Server(object):
             elif len(command) > 0:
                 try:
                     self.connections[index].send(command)
-                    response = str(self.connections[index].recv(1024))
+                    response = str(self.connections[index].recv(4096))
                     print(response)
                 except socket.error:
                     print("- lost connection")
                     break
+        self.connected = False
 
     # removes a connection by index from the lists of available connections and addresses
     def remove_connection(self, index):
