@@ -1,19 +1,16 @@
 # reverse-shell
+reverse-shell is a multi-threaded reverse shell program for remotely managing files on other computers simultaneously.
 
-##Description##
-reverse-shell is a multi-threaded reverse shell program to remotely manage files on other computers simultaneously.
+## Description
+reverse-shell was written in Python 2.7 and is intended to be used on a command line. With reverse-shell, you can
+run the server program on your computer and remotely manage the files on other computers that run the client
+program and connect to you.
 
-In order to run reverse-shell, server.py must be run on a computer first in order to prepare for accepting connections from other clients. Once server.py is running on a computer, client.py can be run from other remote computers, as long as the IP address of the computer running server.py is included in main() of client.py (e.g. **client = Client(“192.168.1.1”)**). 
+While running reverse-shell as a server, you can view all the connections from computers that have connected to you, and
+you can directly manage a connection so that you can manage the files on any connected computers. Since it is multi-
+threaded, reverse-shell also notifies you the moment that a new computer connects to you.
 
-Written in Python 2.7 and Executable from the command line (**./server.py** or **./client.py**).
-
-
-##Commands##
-Use the **list** command to see a list of all available connections from clients. 
-
-Use the **select {ID}** command to select a connection to connect with and manage its files.
-- **{ID}** corresponds to the leftmost number seen after running the **list** command.
-
-Use the **done** command to exit out of a connection with a computer.
-
-Use the **quit** command to exit out of reverse-shell. 
+## Details
+reverse-shell has currently only been tested on Mac computers. Furthermore, reverse-shell as a server can only send
+commands where the client returns output, and does not work properly on commands that require additional input other
+than the input required normally for the command line.
